@@ -1,13 +1,13 @@
 - [A First Example](#a-first-example)
 - [Conversion of XML Schemas and Data](#conversion-of-xml-schemas-and-data)
 - [XML Substitution Groups](#xml-substitution-groups)
-  - [Substitution Group Avro Schema](#substitution-group-avro-schema)
-  - [Substitution Group Serialization to Avro](#substitution-group-serialization-to-avro)
-  - [Substitution Group Deserialization from Avro](#substitution-group-deserialization-from-avro)
+    - [Substitution Group Avro Schema](#substitution-group-avro-schema)
+    - [Substitution Group Serialization to Avro](#substitution-group-serialization-to-avro)
+    - [Substitution Group Deserialization from Avro](#substitution-group-deserialization-from-avro)
 - [XML Nillable Elements](#xml-nillable-elements)
-  - [Nillable Element Avro Schema](#nillable-element-avro-schema)
-  - [Nillable Element Serialization to Avro](#nillable-element-serialization-to-avro)
-  - [Nillable Element Deserialization from Avro](#nillable-element-deserialization-from-avro)
+    - [Nillable Element Avro Schema](#nillable-element-avro-schema)
+    - [Nillable Element Serialization to Avro](#nillable-element-serialization-to-avro)
+    - [Nillable Element Deserialization from Avro](#nillable-element-deserialization-from-avro)
 
 # A First Example
 
@@ -163,9 +163,14 @@ Schema with subtypes added: {
 Serialized sample data to 91 bytes
 ```
 
-Note the importance of the call to `AvroSchemaGenerator.declarePolymorphicType()`. Without it, the generated schema for `DepartureQueue.aircraft` is an array of only the abstract `Aircraft` type. The Avro serializer would not be able to substitute an instance of the `CargoAircraft` or `PassengerAircraft` types into this list because the schema is not aware of them. After these types have been declared to the `AvroSchemaGenerator` instance, the call to `generateSchema()` automatically generates a new schema where the sub-schema for the `DepartureQueue.aircraft` type has been replaced with a union of `Aircraft` along with all of the subtypes which were declared.
+Note the importance of the call to `AvroSchemaGenerator.declarePolymorphicType()`. Without it, the generated schema for `DepartureQueue.aircraft` is an array of only the abstract `Aircraft` type. The Avro serializer would not be able to substitute an
+instance of the `CargoAircraft` or `PassengerAircraft` types into this list because the schema is not aware of them. After these types have been declared to the `AvroSchemaGenerator` instance, the call to `generateSchema()` automatically generates a new
+schema where the sub-schema for the `DepartureQueue.aircraft` type has been replaced with a union of `Aircraft` along with all of the subtypes which were declared.
 
-Next, an instance of `AvroSerializer` is used to serialize an object to an Avro bytestream. `AvroSerializer` wraps the `ReflectDatumReader` and `ReflectDatumWriter` classes provided by the Avro library. A serializer is created for the `DepartureQueue` class using the newly generated schema and then the `writeToAvro()` method is called with an output stream and the sample object passed as arguments. The `AvroSerializer` class is provided as a convenience for reading and writing objects with a single function call, but it is not required to use this abstraction - the user may write the Java object to an Avro data stream by directly using the Avro API if he/she so chooses. Note that the bytestream only contains the serialized binary data, and it does *not* include the Avro schema.
+Next, an instance of `AvroSerializer` is used to serialize an object to an Avro bytestream. `AvroSerializer` wraps the `ReflectDatumReader` and `ReflectDatumWriter` classes provided by the Avro library. A serializer is created for the `DepartureQueue`
+class using the newly generated schema and then the `writeToAvro()` method is called with an output stream and the sample object passed as arguments. The `AvroSerializer` class is provided as a convenience for reading and writing objects with a single
+function call, but it is not required to use this abstraction - the user may write the Java object to an Avro data stream by directly using the Avro API if he/she so chooses. Note that the bytestream only contains the serialized binary data, and it does *
+not* include the Avro schema.
 
 # Conversion of XML Schemas and Data
 
@@ -271,7 +276,8 @@ The following is a sample document which validates against the XSD:
 </cityCollection>
 ```
 
-The Maven project generates the Java classes from the XSD prior to compiling source code for the sample program. The sample program in this example project then reads the sample document from the classpath and converts it to Avro. Then it converts the Avro data back into an XML document and prints it for comparison:
+The Maven project generates the Java classes from the XSD prior to compiling source code for the sample program. The sample program in this example project then reads the sample document from the classpath and converts it to Avro. Then it converts the Avro
+data back into an XML document and prints it for comparison:
 
 ```java
 package edu.mit.ll.xml_avro_converter.examples.xml;
@@ -327,9 +333,14 @@ public class XmlConversionExample {
 }
 ```
 
-The program begins by instantiating an `XmlSerializer` to facilitiate XML serialization and deserialization. A `JAXBContext` is created using the `ObjectFactory` that was generated by JAXB, and the XSD is read into the program so the marshaller can validate input and output documents. Then an instance of `XmlSerializer` is instantiated (using the `JAXBContext` and the XML schema), and the data is read into Java by calling `readFromXml()` on the `XmlSerializer`. Like the `AvroSerializer` class, it is not required to use it, and JAXB API can be used directly.
+The program begins by instantiating an `XmlSerializer` to facilitiate XML serialization and deserialization. A `JAXBContext` is created using the `ObjectFactory` that was generated by JAXB, and the XSD is read into the program so the marshaller can
+validate input and output documents. Then an instance of `XmlSerializer` is instantiated (using the `JAXBContext` and the XML schema), and the data is read into Java by calling `readFromXml()` on the `XmlSerializer`. Like the `AvroSerializer` class, it is
+not required to use it, and JAXB API can be used directly.
 
-Next, the Avro schema is created for the `CityCollection` type and used to convert the Java object to an Avro-formatted byte stream. As in the previous example, an `AvroSerializer` is created by the `AvroSchemaGenerator` instance and the serializer writes the Avro data to a `byte[]`. `readFromAvro()` is then called on the same `AvroSerializer` instance to convert the Avro bytestream back into a new Java object which is then converted into an XML `Document` using the `writeToXml()` method of the `XmlSerializer` object. Finally, the `Document` generated from the Avro data is printed to `System.out` for the user to read (demonstrating once again that the XML documents are identical) and the sizes of the XML and Avro documents are printed for comparison. The program should output:
+Next, the Avro schema is created for the `CityCollection` type and used to convert the Java object to an Avro-formatted byte stream. As in the previous example, an `AvroSerializer` is created by the `AvroSchemaGenerator` instance and the serializer writes
+the Avro data to a `byte[]`. `readFromAvro()` is then called on the same `AvroSerializer` instance to convert the Avro bytestream back into a new Java object which is then converted into an XML `Document` using the `writeToXml()` method of
+the `XmlSerializer` object. Finally, the `Document` generated from the Avro data is printed to `System.out` for the user to read (demonstrating once again that the XML documents are identical) and the sizes of the XML and Avro documents are printed for
+comparison. The program should output:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -467,7 +478,8 @@ Attempting to create an Avro schema for this class will now result in the follow
 
 In order to resolve this, is it necessary to provide custom databindings for this portion of the Avro schema, and also to override Avro's default logic for serializing and deserializing these data elements.
 
-First, a custom subclass of Avro's `ReflectData` class must be passed to the AvroSchemaGenerator instance. `schemaGenerator` will use this class when generating the Avro schema. The custom `ReflectData` class will also be used to provide custom `DatumReader` and `DatumWriter` objects for Avro to serialize and deserialize Java objects.
+First, a custom subclass of Avro's `ReflectData` class must be passed to the AvroSchemaGenerator instance. `schemaGenerator` will use this class when generating the Avro schema. The custom `ReflectData` class will also be used to provide
+custom `DatumReader` and `DatumWriter` objects for Avro to serialize and deserialize Java objects.
 
 ```patch
 diff --git a/xml-avro-converter-examples/xml-substitution-group-databinding/src/main/java/edu/mit/ll/xml_avro_converter/examples/xml/XmlConversionExample.java b/xml-avro-converter-examples/xml-substitution-group-databinding/src/main/java/edu/mit/ll/xml_avro_converter/examples/xml/XmlConversionExample.java
@@ -549,7 +561,11 @@ public class XmlReflectData extends ReflectData {
 }
 ```
 
-`XmlReflectData` overrides `createFieldSchema()` in the parent class, which is the method which creates fields of record-type Avro schemas. `XmlReflectData.createFieldSchema()` inspects the annotation data on the field that's passed into it. When it matches the expected annotation data for the `country` field, it calls `createCountrySchema()` which returns a special record for the `country` field. The special schema is a record-type Avro schema with two fields: the name of the type (`typeName`, which in this case could be either `country` or `countryIsoCode`), and the content of the field itself (`typeData`). Since both `country` and `countryIsoCode` are defined as strings in the XSD, this primitive type is the appropriate schema for `typeData`. However, for substitution groups with more complex types, a record schema generated for the substitution group's base type would be the appropriate schema for `typeData`. This can be achieved by calling `getSchema()` using the base type of the substitution group as the first argument.
+`XmlReflectData` overrides `createFieldSchema()` in the parent class, which is the method which creates fields of record-type Avro schemas. `XmlReflectData.createFieldSchema()` inspects the annotation data on the field that's passed into it. When it
+matches the expected annotation data for the `country` field, it calls `createCountrySchema()` which returns a special record for the `country` field. The special schema is a record-type Avro schema with two fields: the name of the type (`typeName`, which
+in this case could be either `country` or `countryIsoCode`), and the content of the field itself (`typeData`). Since both `country` and `countryIsoCode` are defined as strings in the XSD, this primitive type is the appropriate schema for `typeData`.
+However, for substitution groups with more complex types, a record schema generated for the substitution group's base type would be the appropriate schema for `typeData`. This can be achieved by calling `getSchema()` using the base type of the substitution
+group as the first argument.
 
 The Avro schema for the `country` field now looks like:
 
@@ -570,13 +586,16 @@ The Avro schema for the `country` field now looks like:
 
 ## Substitution Group Serialization to Avro
 
-Now that the schema has been changed, the Avro library cannot natively serialize a Java object to Avro format. When Avro reaches the `country` field of a `City` object, the schema will indicate that the data type in that field is an object with two string types (named `typeName` and `typeData`). But instead, it will really encounter an object of type `JAXBElement<String>`. At this point in the serialization, Avro will return the following error:
+Now that the schema has been changed, the Avro library cannot natively serialize a Java object to Avro format. When Avro reaches the `country` field of a `City` object, the schema will indicate that the data type in that field is an object with two string
+types (named `typeName` and `typeData`). But instead, it will really encounter an object of type `JAXBElement<String>`. At this point in the serialization, Avro will return the following error:
 
     Caused by: org.apache.avro.AvroTypeException: Unknown type: T
 
-Why does it produce this message? When it encounters a type that it does not expect in the schema, it attempts to create the schema for the new type, which, once again, it cannot do because Avro cannot natively serialize generic Java types (unless they are a list or a map).
+Why does it produce this message? When it encounters a type that it does not expect in the schema, it attempts to create the schema for the new type, which, once again, it cannot do because Avro cannot natively serialize generic Java types (unless they are
+a list or a map).
 
-At the bottom of the definition of `XmlReflectData`, the `createDatumWriter()` method is overridden to return an instance of `XmlDatumWriter`, a subclass of Avro's `ReflectDatumWriter` class. `XmlDatumWriter` implements the custom code necessary to serialize the `country` field -- this code is provided below:
+At the bottom of the definition of `XmlReflectData`, the `createDatumWriter()` method is overridden to return an instance of `XmlDatumWriter`, a subclass of Avro's `ReflectDatumWriter` class. `XmlDatumWriter` implements the custom code necessary to
+serialize the `country` field -- this code is provided below:
 
 ```java
 package edu.mit.ll.xml_avro_converter.examples.xml;
@@ -634,13 +653,19 @@ public class XmlDatumWriter<T> extends ReflectDatumWriter<T> {
 }
 ```
 
-`writeField()` scans for the `country` field and calls `writeCountry()` when it is observed to handle the actual serialization. `writeCountry()` writes to the encoder three times. The Avro schema specifies via a union that `country` can either be a null or a record, but since the XML schema forbids the `country` field from being null, the code simply assumes that it is never null and always of the `Country` type. The name of the `Country` type is looked up in the union and the value is written using the `writeIndex()` method of the `Encoder object.
+`writeField()` scans for the `country` field and calls `writeCountry()` when it is observed to handle the actual serialization. `writeCountry()` writes to the encoder three times. The Avro schema specifies via a union that `country` can either be a null or
+a record, but since the XML schema forbids the `country` field from being null, the code simply assumes that it is never null and always of the `Country` type. The name of the `Country` type is looked up in the union and the value is written using
+the `writeIndex()` method of the `Encoder object.
 
-The other two calls to `write()` (defined in `XmlDatumWriter`'s superclass) are for the `typeName` and `typeData` properties. The fields must be written in the order they are specified when the schema is created. When the `country` field is provided as the full country name, `typeName` is set to `edu.mit.ll.xml_avro_converter.examples.cities.Country`, but when it is specified as an ISO code, it is set to `edu.mit.ll.xml_avro_converter.examples.cities.CountryIsoCode`. The `XmlDatumReader` will use this distinction to determine which field type to return during deserialization. The last value written is the actual value of the `country` field.
+The other two calls to `write()` (defined in `XmlDatumWriter`'s superclass) are for the `typeName` and `typeData` properties. The fields must be written in the order they are specified when the schema is created. When the `country` field is provided as the
+full country name, `typeName` is set to `edu.mit.ll.xml_avro_converter.examples.cities.Country`, but when it is specified as an ISO code, it is set to `edu.mit.ll.xml_avro_converter.examples.cities.CountryIsoCode`. The `XmlDatumReader` will use this
+distinction to determine which field type to return during deserialization. The last value written is the actual value of the `country` field.
 
 ## Substitution Group Deserialization from Avro
 
-Once again, it is necessary to instruct Avro how to read the binary data for the custom type back into Java. The default `ReflectDatumReader` will not be able to find a Java type which corresponds to the structure provided in the schema, so it will instead simply deserialize the stream into an instance of `Record` (a generic Avro type for encapsulating data), which implements the `GenericRecord` type. Then it sets the `country` field of the Java object to this `Record` instance which JAXB cannot serialize and so produces the following error message:
+Once again, it is necessary to instruct Avro how to read the binary data for the custom type back into Java. The default `ReflectDatumReader` will not be able to find a Java type which corresponds to the structure provided in the schema, so it will instead
+simply deserialize the stream into an instance of `Record` (a generic Avro type for encapsulating data), which implements the `GenericRecord` type. Then it sets the `country` field of the Java object to this `Record` instance which JAXB cannot serialize
+and so produces the following error message:
 
     Caused by: com.sun.istack.SAXException2: class org.apache.avro.generic.GenericData$Record nor any of its super class is known to this context.
     javax.xml.bind.JAXBException: class org.apache.avro.generic.GenericData$Record nor any of its super class is known to this context.
@@ -713,7 +738,8 @@ public class XmlDatumReader<T> extends ReflectDatumReader<T> {
 }
 ```
 
-`XmlDatumReader` overrides the `readRecord()` method to search for the `country` field. Upon arriving at it, the `typeName` and `typeData` fields are read back into corresponding string variables. Based on the content of the `typeName` string, the method calls either `createCountry()` or `createCountryIsoCode()` with the `typeData` variable as the sole argument and returns the result.
+`XmlDatumReader` overrides the `readRecord()` method to search for the `country` field. Upon arriving at it, the `typeName` and `typeData` fields are read back into corresponding string variables. Based on the content of the `typeName` string, the method
+calls either `createCountry()` or `createCountryIsoCode()` with the `typeData` variable as the sole argument and returns the result.
 
 Now it is possible to perform full serialization and deserialization. The full example can be run from `xml-avro-converter-examples/xml-substitution-group-databinding` with `mvn compile exec:java`. The output now shows as:
 
@@ -871,7 +897,8 @@ The `population` field now has the following schema:
 } ]
 ```
 
-Ideally, a nested union of type `[null, [null, int]]` would be preferable, but nested union types are not currently allowed by Avro, so a record schema is used intsead. Once again, there are two fields in the `Population` type: `nil` (a `boolean`) and `data` (a `long`, to store the actual value, if provided).
+Ideally, a nested union of type `[null, [null, int]]` would be preferable, but nested union types are not currently allowed by Avro, so a record schema is used intsead. Once again, there are two fields in the `Population` type: `nil` (a `boolean`)
+and `data` (a `long`, to store the actual value, if provided).
 
 ## Nillable Element Serialization to Avro
 
@@ -924,7 +951,8 @@ index fde0fae..ff91b46 100644
  }
 ```
 
-If `population` is null, the index for a null element is written to the union and a null element is written using the `writeNull()` method. If `population` is non-null, the index for the record is written into the union. Then the `population.isNil()` value is written to the `nil` field of the record, and the value stored within the `JAXBElement` is written to the `data` field.
+If `population` is null, the index for a null element is written to the union and a null element is written using the `writeNull()` method. If `population` is non-null, the index for the record is written into the union. Then the `population.isNil()` value
+is written to the `nil` field of the record, and the value stored within the `JAXBElement` is written to the `data` field.
 
 ## Nillable Element Deserialization from Avro
 
@@ -982,7 +1010,9 @@ index b63e253..fbeaeaf 100644
  }
 ```
 
-Again, the fields are read in the order specified by the schema. `nil` is read back into a `boolean` field and `data` is read back into a `long`. Then a validation check is run to ensure that `data` is null if `nil` is true. Finally, a JAXB `ObjectFactory` is instantiated once again and used to create the `population` Java field and the value is returned. Note that it is not necessary here to handle the case where the `population` field is omitted. If Avro encounters a null value, then `readRecord()` would not be called on this portion of the schema, so that case is handled automatically.
+Again, the fields are read in the order specified by the schema. `nil` is read back into a `boolean` field and `data` is read back into a `long`. Then a validation check is run to ensure that `data` is null if `nil` is true. Finally, a JAXB `ObjectFactory`
+is instantiated once again and used to create the `population` Java field and the value is returned. Note that it is not necessary here to handle the case where the `population` field is omitted. If Avro encounters a null value, then `readRecord()` would
+not be called on this portion of the schema, so that case is handled automatically.
 
 Now, when the XML document is reproduced after conversion through Avro, the `nil` element is preserved in the `population` field of the first `<city>` element:
 
