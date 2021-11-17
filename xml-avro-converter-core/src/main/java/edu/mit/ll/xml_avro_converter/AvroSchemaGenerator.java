@@ -54,7 +54,7 @@ public final class AvroSchemaGenerator {
     private final Map<String, Set<Schema>> polymorphicTypeSchemas;
     private final RecordCache recordCache;
     private final Map<String, Schema> customSchemas;
-    private final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
+    private static final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
 
     public AvroSchemaGenerator() {
         this(new ReflectData());
