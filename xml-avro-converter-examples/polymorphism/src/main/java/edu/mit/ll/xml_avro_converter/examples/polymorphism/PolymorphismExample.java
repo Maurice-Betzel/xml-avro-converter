@@ -32,6 +32,7 @@ import edu.mit.ll.xml_avro_converter.AvroSchemaGenerator;
 import edu.mit.ll.xml_avro_converter.AvroSerializer;
 import org.apache.avro.Schema;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,30 +41,40 @@ import java.util.List;
 public class PolymorphismExample {
 
     public static void main(String[] args) throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator();
-//        Schema departureQueueSchema = schemaGenerator.generateSchema(DepartureQueue.class);
 
-//        System.out.println("Schema without subtypes: " + departureQueueSchema.toString(true));
+        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator();
+        Schema departureQueueSchema = schemaGenerator.generateSchema(DepartureQueue.class);
+        System.out.println("Schema without subtypes: " + departureQueueSchema.toString(true));
 
         schemaGenerator.declarePolymorphicType(CargoAircraft.class, PassengerAircraft.class);
-        Schema departureQueueSchema = schemaGenerator.generateSchema(DepartureQueue.class);
+        departureQueueSchema = schemaGenerator.generateSchema(DepartureQueue.class);
         System.out.println("Schema with subtypes added: " + departureQueueSchema.toString(true));
 
-        DepartureQueue queue = getSampleData();
+        DepartureQueue departureQueue = getSampleData();
         AvroSerializer<DepartureQueue> serializer = new AvroSerializer(departureQueueSchema);
-        ByteArrayOutputStream departureQueueAvroStream = new ByteArrayOutputStream();
-        serializer.writeToAvro(departureQueueAvroStream, queue);
-        System.out.println("Serialized sample data to " + departureQueueAvroStream.toByteArray().length + " bytes");
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        serializer.writeToAvro(byteArrayOutputStream, departureQueue);
+        System.out.println("Serialized sample data to " + byteArrayOutputStream.toByteArray().length + " bytes");
+        DepartureQueue departureQueueRestored = serializer.readFromAvro(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
     }
 
     private static DepartureQueue getSampleData() {
+
         DepartureQueue departureQueue = new DepartureQueue();
         departureQueue.name = "sample departure queue";
         departureQueue.aircraft = new ArrayList<>();
 
         CargoAircraft sampleCargoAircraft = new CargoAircraft();
-        sampleCargoAircraft.identifier = "sample cargo aircraft";
+        sampleCargoAircraft.identifier = "sample cargo aircraft 1";
         sampleCargoAircraft.cargoCapacity = 1800.0;
+        departureQueue.aircraft.add(sampleCargoAircraft);
+
+        sampleCargoAircraft = new CargoAircraft();
+        sampleCargoAircraft.identifier = "sample cargo aircraft 2";
+        sampleCargoAircraft.cargoCapacity = 3600.0;
+        CargoAircraft.CargoAircraftExtended cargoAircraftExtended = new CargoAircraft.CargoAircraftExtended();
+        cargoAircraftExtended.extendedCargoCapacity = 1800.0;
+        sampleCargoAircraft.cargoAircraftExtended = cargoAircraftExtended;
         departureQueue.aircraft.add(sampleCargoAircraft);
 
         PassengerAircraft samplePassengerAircraft = new PassengerAircraft();
@@ -78,21 +89,32 @@ public class PolymorphismExample {
 
         public String name;
         public List<Aircraft> aircraft;
+
     }
 
     private static abstract class Aircraft {
 
         public String identifier;
+
     }
 
     private static class CargoAircraft extends Aircraft {
 
         public double cargoCapacity;
+        public CargoAircraftExtended cargoAircraftExtended;
+
+        private static class CargoAircraftExtended {
+
+            public double extendedCargoCapacity;
+
+        }
 
     }
 
     private static class PassengerAircraft extends Aircraft {
 
         public int passengerCapacity;
+
     }
+
 }

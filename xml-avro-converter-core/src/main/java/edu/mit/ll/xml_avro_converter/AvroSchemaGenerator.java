@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class AvroSchemaGenerator {
 
@@ -52,6 +54,7 @@ public final class AvroSchemaGenerator {
     private final Map<String, Set<Schema>> polymorphicTypeSchemas;
     private final RecordCache recordCache;
     private final Map<String, Schema> customSchemas;
+    private final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
 
     public AvroSchemaGenerator() {
         this(new ReflectData());
@@ -82,7 +85,6 @@ public final class AvroSchemaGenerator {
         for (Type type : types) {
             Class superType = ((Class) type).getSuperclass();
             while (!superType.equals(java.lang.Object.class)) {
-                //String typeName = superType.getName();
                 String typeName = superType.getCanonicalName();
                 Set<Schema> subtypes = polymorphicTypeSchemas.get(typeName);
                 if (subtypes == null) {
@@ -90,7 +92,6 @@ public final class AvroSchemaGenerator {
                     polymorphicTypeSchemas.put(typeName, subtypes);
                 }
                 Schema subtypeSchema = reflectData.getSchema(type);
-                //subtypeSchema.addProp(JAVA_CLASS_NAME, type.getTypeName());
                 subtypes.add(subtypeSchema);
                 superType = superType.getSuperclass();
             }
@@ -145,24 +146,23 @@ public final class AvroSchemaGenerator {
             }
             Type polymorphicType;
             try {
-                // if inner class look for uppercase class namings
-                String[] nameSpaceParts = emptySchemaName.split("\\.");
-                String resultNameSpace = "";
-                boolean firstSkipped = false;
-                for (String nameSpacePart : nameSpaceParts) {
-                    if (Character.isUpperCase(nameSpacePart.charAt(0))) {
-                        if (firstSkipped) {
-                            resultNameSpace = resultNameSpace + "$" + nameSpacePart;
-                        } else {
-                            firstSkipped = true;
-                            resultNameSpace = resultNameSpace + "." + nameSpacePart;
-                        }
+                // In case of inner classes look for uppercase class namings and replace dot notation from schema
+                Matcher matcher = uppercaseClassNamePattern.matcher(emptySchemaName);
+                boolean firstDotSkipped = false;
+                StringBuilder stringBuilder = null;
+                while (matcher.find()) {
+                    if (firstDotSkipped) {
+                        stringBuilder.setCharAt(matcher.start(), '$');
                     } else {
-                        resultNameSpace = resultNameSpace + "." + nameSpacePart;
+                        matcher.start();
+                        firstDotSkipped = true;
+                        stringBuilder = new StringBuilder(emptySchemaName);
                     }
                 }
-                resultNameSpace = resultNameSpace.substring(1);
-                polymorphicType = Class.forName(resultNameSpace);
+                if (stringBuilder != null) {
+                    emptySchemaName = stringBuilder.toString();
+                }
+                polymorphicType = Class.forName(emptySchemaName);
             } catch (ClassNotFoundException ex) {
                 throw new SchemaGenerationException("Unable to find class for " + emptySchemaName, ex);
             }
@@ -211,8 +211,7 @@ public final class AvroSchemaGenerator {
 
             Collection<Schema> subTypes = null;
             if (isNamedType(unionType)) {
-                subTypes = polymorphicTypeSchemas.get(
-                        SpecificData.getClassName(unionType));
+                subTypes = polymorphicTypeSchemas.get(SpecificData.getClassName(unionType));
             }
             if (subTypes == null) {
                 continue;
@@ -261,8 +260,7 @@ public final class AvroSchemaGenerator {
                     namedSchemas.put(unionSchema.getFullName(), unionSchema);
                     break;
                 default:
-                    throw new SchemaGenerationException("Unsupported operation: Schema"
-                            + " of type " + unionSchema.getType() + " in union");
+                    throw new SchemaGenerationException("Unsupported operation: Schema of type " + unionSchema.getType() + " in union");
             }
         }
         if (booleanAdded) {
@@ -316,8 +314,7 @@ public final class AvroSchemaGenerator {
     public void declareCustomNamedSchema(Schema schema) {
         String typeName = schema.getFullName();
         if (!(isNamedType(schema))) {
-            throw new SchemaGenerationException("Schema provided for " + typeName
-                    + " is not a NamedSchema");
+            throw new SchemaGenerationException("Schema provided for " + typeName + " is not a NamedSchema");
         }
         Schema customType = customSchemas.get(typeName);
         if (customType == null) {
@@ -325,9 +322,7 @@ public final class AvroSchemaGenerator {
             return;
         }
         if (!customType.equals(schema)) {
-            throw new SchemaGenerationException(
-                    "Attempted to redefine schema for existing custom type "
-                            + typeName);
+            throw new SchemaGenerationException("Attempted to redefine schema for existing custom type " + typeName);
         }
     }
 
@@ -354,16 +349,13 @@ public final class AvroSchemaGenerator {
         // Create a schema for template
         public Schema create(Schema template) {
             if (template.getType() != Schema.Type.RECORD) {
-                String errMsg = String.format("Attempted to cache non-Record schema "
-                                + " of type %s: %s",
-                        template.getType(), template.getFullName());
+                String errMsg = String.format("Attempted to cache non-Record schema of type %s: %s", template.getType(), template.getFullName());
                 throw new SchemaGenerationException(errMsg);
             }
 
             String fullName = template.getFullName();
             if (cachedRecords.containsKey(fullName)) {
-                String errMsg = String.format("Attempted to cache schema for %s but"
-                        + " it already exists", fullName);
+                String errMsg = String.format("Attempted to cache schema for %s but it already exists", fullName);
                 throw new SchemaGenerationException(errMsg);
             }
 
