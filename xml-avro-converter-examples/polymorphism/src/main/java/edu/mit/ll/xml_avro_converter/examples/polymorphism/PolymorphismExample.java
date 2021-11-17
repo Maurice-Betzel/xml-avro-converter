@@ -41,28 +41,19 @@ public class PolymorphismExample {
 
     public static void main(String[] args) throws IOException {
         AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator();
-        Schema departureQueueSchema = schemaGenerator.generateSchema(
-                DepartureQueue.class);
+//        Schema departureQueueSchema = schemaGenerator.generateSchema(DepartureQueue.class);
 
-        System.out.println("Schema without subtypes: "
-                + departureQueueSchema.toString(true));
+//        System.out.println("Schema without subtypes: " + departureQueueSchema.toString(true));
 
-        schemaGenerator.declarePolymorphicType(
-                CargoAircraft.class,
-                PassengerAircraft.class);
-        departureQueueSchema = schemaGenerator.generateSchema(
-                DepartureQueue.class);
-        System.out.println("Schema with subtypes added: "
-                + departureQueueSchema.toString(true));
+        schemaGenerator.declarePolymorphicType(CargoAircraft.class, PassengerAircraft.class);
+        Schema departureQueueSchema = schemaGenerator.generateSchema(DepartureQueue.class);
+        System.out.println("Schema with subtypes added: " + departureQueueSchema.toString(true));
 
         DepartureQueue queue = getSampleData();
-        AvroSerializer<DepartureQueue> serializer = new AvroSerializer(
-                departureQueueSchema);
-        ByteArrayOutputStream departureQueueAvroStream
-                = new ByteArrayOutputStream();
+        AvroSerializer<DepartureQueue> serializer = new AvroSerializer(departureQueueSchema);
+        ByteArrayOutputStream departureQueueAvroStream = new ByteArrayOutputStream();
         serializer.writeToAvro(departureQueueAvroStream, queue);
-        System.out.println("Serialized sample data to "
-                + departureQueueAvroStream.toByteArray().length + " bytes");
+        System.out.println("Serialized sample data to " + departureQueueAvroStream.toByteArray().length + " bytes");
     }
 
     private static DepartureQueue getSampleData() {
@@ -97,6 +88,7 @@ public class PolymorphismExample {
     private static class CargoAircraft extends Aircraft {
 
         public double cargoCapacity;
+
     }
 
     private static class PassengerAircraft extends Aircraft {

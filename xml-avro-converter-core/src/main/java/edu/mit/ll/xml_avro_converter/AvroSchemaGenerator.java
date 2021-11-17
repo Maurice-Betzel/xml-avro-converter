@@ -82,13 +82,15 @@ public final class AvroSchemaGenerator {
         for (Type type : types) {
             Class superType = ((Class) type).getSuperclass();
             while (!superType.equals(java.lang.Object.class)) {
-                String typeName = superType.getName();
+                //String typeName = superType.getName();
+                String typeName = superType.getCanonicalName();
                 Set<Schema> subtypes = polymorphicTypeSchemas.get(typeName);
                 if (subtypes == null) {
                     subtypes = new HashSet<>();
                     polymorphicTypeSchemas.put(typeName, subtypes);
                 }
                 Schema subtypeSchema = reflectData.getSchema(type);
+                //subtypeSchema.addProp(JAVA_CLASS_NAME, type.getTypeName());
                 subtypes.add(subtypeSchema);
                 superType = superType.getSuperclass();
             }
@@ -104,19 +106,16 @@ public final class AvroSchemaGenerator {
             Schema oldFieldSchema = oldField.schema();
             switch (oldFieldSchema.getType()) {
                 case ARRAY:
-                    newFieldSchema = getPolymorphicTypes(Schema.createArray(
-                            getPolymorphicTypes(oldFieldSchema.getElementType())));
+                    newFieldSchema = getPolymorphicTypes(Schema.createArray(getPolymorphicTypes(oldFieldSchema.getElementType())));
                     break;
                 case MAP:
-                    newFieldSchema = getPolymorphicTypes(Schema.createMap(
-                            getPolymorphicTypes(oldFieldSchema.getValueType())));
+                    newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));
                     break;
                 default:
                     newFieldSchema = getPolymorphicTypes(oldFieldSchema);
                     break;
             }
-            newFields.add(new Field(oldField.name(), newFieldSchema, oldField.doc(),
-                    oldField.defaultVal(), oldField.order()));
+            newFields.add(new Field(oldField.name(), newFieldSchema, oldField.doc(), oldField.defaultVal(), oldField.order()));
         }
 
         return recordCache.set(oldRecordSchema, newFields);
@@ -146,10 +145,26 @@ public final class AvroSchemaGenerator {
             }
             Type polymorphicType;
             try {
-                polymorphicType = Class.forName(emptySchemaName);
+                // if inner class look for uppercase class namings
+                String[] nameSpaceParts = emptySchemaName.split("\\.");
+                String resultNameSpace = "";
+                boolean firstSkipped = false;
+                for (String nameSpacePart : nameSpaceParts) {
+                    if (Character.isUpperCase(nameSpacePart.charAt(0))) {
+                        if (firstSkipped) {
+                            resultNameSpace = resultNameSpace + "$" + nameSpacePart;
+                        } else {
+                            firstSkipped = true;
+                            resultNameSpace = resultNameSpace + "." + nameSpacePart;
+                        }
+                    } else {
+                        resultNameSpace = resultNameSpace + "." + nameSpacePart;
+                    }
+                }
+                resultNameSpace = resultNameSpace.substring(1);
+                polymorphicType = Class.forName(resultNameSpace);
             } catch (ClassNotFoundException ex) {
-                throw new SchemaGenerationException("Unable to find class for "
-                        + emptySchemaName, ex);
+                throw new SchemaGenerationException("Unable to find class for " + emptySchemaName, ex);
             }
             computeNewRecordSchema(reflectData.getSchema(polymorphicType));
         }
@@ -160,8 +175,7 @@ public final class AvroSchemaGenerator {
             case ARRAY:
             case MAP:
             case UNION:
-                throw new UnsupportedOperationException("Schemas with ARRAY, MAP, or"
-                        + " UNION-type root schemas are not supported yet");
+                throw new UnsupportedOperationException("Schemas with ARRAY, MAP, or UNION-type root schemas are not supported yet");
             default:
                 return rootSchema;
         }
@@ -283,7 +297,9 @@ public final class AvroSchemaGenerator {
 
     // Create a schema for type
     public Schema generateSchema(Type type) {
-        return polymorphizeSchema(reflectData.getSchema(type));
+        Schema schema = reflectData.getSchema(type);
+        //schema.addProp(JAVA_CLASS_NAME, type.getTypeName());
+        return polymorphizeSchema(schema);
     }
 
     // Return whether unionType is a named type

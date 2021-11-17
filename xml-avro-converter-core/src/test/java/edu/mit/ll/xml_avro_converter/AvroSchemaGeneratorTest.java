@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 public class AvroSchemaGeneratorTest {
 
-    Logger LOGGER = LoggerFactory.getLogger(AvroSchemaGeneratorTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AvroSchemaGeneratorTest.class);
 
     public static Schema getSampleSchema() {
         ReflectData reflectData = ReflectData.get();
